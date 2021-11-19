@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ES-SV">
+
+<head>
+	<base target="_self">
+
+	<style>
+		path:hover {
+			cursor: pointer;
+			opacity: 0.5;
+
+		}
+
+		.sidebar {
+			background-color: rgba(0, 0, 0, .5);			      
+      padding-bottom:1rem;
+      color:white;
+      
+		}
+ 
+    .sidebar p,button{
+      display:inline;
+      
+    }
+    svg{
+      transform:scale(.7);      
+      margin:0px;
+    }
+
+	</style>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+</head>
+
+<body>
+	
+	<div class="sidebar">
+		<h4>Generar reporte</h4>
+		<p>
+			<label>desde:
+  <input type="text" id="desde" >
+  </label>
+		</p>
+		<p>
+			<label>hasta
+<input type="text" id="hasta" >
+</label>
+		</p>
+		<button id='reporte_btn' onclick="reporte()">Generar</button>
+	</div>
+
+	<label >selecccione fecha
+<input type="text" id="fecha" >
+</label>
+
+	<svg stroke='white' fill='rgba(0,0,255,.5)' stroke-width='3' xmlns:mapsvg="http://mapsvg.com"
+		xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+		xmlns:svg="http://www.w3.org/2000/svg" xmlns="http://www.w3.org/2000/svg"
+		mapsvg:geoViewBox="-90.125247 14.450692 -87.683841 13.152442"  viewBox="0 0 792.89117 431.65646"    
+    >
+		<? for (var depto in mapa) { ?>
+		<path d="<?= mapa[depto][2] ?>" title="<?= mapa[depto][1] ?>" id="<?= mapa[depto][0] ?>" />
+		<? } ?>
+	</svg>
+
+</body>
+
+</html>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.2/pdfmake.min.js" ></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.2/vfs_fonts.min.js" ></script>
+<script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.9/dist/plugins/monthSelect/index.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.9/dist/plugins/monthSelect/style.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.9/dist/l10n/es.min.js"></script>
+<script>
+	let fecha=null
+flatpickr("#fecha,#desde,#hasta", {
+    plugins: [
+        new monthSelectPlugin()
+    ],
+    minDate:'2014-01',
+    maxDate:(()=>{return new Date().getFullYear()+'-'+new Date().getMonth()})(),
+    dateFormat: "m-Y",
+    locale: "es",
+    defaultDate:(()=>{return monthtonumber(new Date().getMonth())+' '+new Date().getFullYear()})(),
+    onChange: function(selectedDates, dateStr, instance) {
+      if(instance.element.id==='fecha'){
+          fecha=dateStr
+      }
+     
+    },
+    onReady:function(selectedDates, dateStr, instance) {
+       if(instance.element.id==='fecha'){
+          fecha=dateStr
+      }
+    
+    }
+  }
+);
+
+window.addEventListener('DOMContentLoaded', (event) => {
+      const deptos=document.getElementsByTagName("path");
+      
+      for (let depto of deptos) {
+          depto.addEventListener('click',function(){
+            Swal.fire('espere......',)
+              google.script.run.withSuccessHandler((results)=>{
+              //console.log(rs)
+              data=''
+              results.slice(1).forEach((val)=>{//evita el primer elemento(encabezado)
+                data+=`<b>${val[0].toUpperCase()}</b> : ${val[1]===''?0:val[1]}<br/>`//si val[1] es vacio coloca cero
+               
+              })
+             
+                 Swal.fire( {title:this.attributes[1].value+' '+fecha, html:data })
+              
+            }).getajaxdata(this.attributes[1].value,fecha)
+            
+          })
+}
+
+
+
+});
+
+function reporte(){
+  const desde=document.getElementById("desde").value;
+  const hasta=document.getElementById("hasta").value;
+  Swal.fire('Generando reporte....') 
+google.script.run.withSuccessHandler((results)=>{   
+    console.log(results)  
+    Swal.close();
+    pdfMake.createPdf(results).open();
+     
+}).make_report(desde,hasta)
+ 
+}
+
+   function monthtonumber(month){
+        return {
+            1:'Enero',
+            2:'Febrero',
+            3:'Marzo',
+            4:'Abril',
+            5:'Mayo',
+            6:'Junio',
+            7:'Julio',
+            8:'Agosto',
+            9:'Septiembre',
+            10:'Octubre',
+            11:'Noviembre',
+            12:'Diciembre' 
+        }[month]
+
+}
+
+</script>
